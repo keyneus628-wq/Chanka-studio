@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chanka Studio — diseño textil 2D</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body data-modo="disenar" class="bloqueado">
+
+<!-- Control de acceso de demostración (datos locales, sin servidor) -->
+<section id="pantallaAcceso" class="auth-screen" aria-labelledby="authTitulo">
+  <div class="auth-card">
+    <span class="brand">CHANKA <b>STUDIO</b></span>
+    <p class="auth-tagline">Diseña textiles con curvas matemáticas</p>
+    <h1 id="authTitulo">Iniciar sesión</h1>
+    <form id="formAcceso">
+      <div id="campoNombre" hidden>
+        <label for="nombreUsuario">Tu nombre</label>
+        <input id="nombreUsuario" type="text" autocomplete="name" maxlength="60" placeholder="Escribe tu nombre">
+      </div>
+      <label for="correoUsuario">Correo electrónico</label>
+      <input id="correoUsuario" type="email" autocomplete="username" required maxlength="120" placeholder="nombre@correo.com">
+      <label for="claveUsuario">Contraseña</label>
+      <input id="claveUsuario" type="password" autocomplete="current-password" required minlength="8" placeholder="Mínimo 8 caracteres">
+      <p id="authEstado" role="status" aria-live="polite"></p>
+      <button id="enviarAuth" type="submit" class="primary">Iniciar sesión</button>
+    </form>
+    <button type="button" id="cambiarAuth" class="link-button">Crear una cuenta</button>
+    <div class="auth-separator"><span>o</span></div>
+    <button id="entrarInvitado" type="button">Continuar como invitado</button>
+    <p class="auth-nota">Versión de demostración: las cuentas y los diseños se guardan solo en este navegador. No utiliza un servidor de autenticación.</p>
+  </div>
+</section>
+
+<header>
+  <div><span class="brand">CHANKA <b>STUDIO</b></span><small>Diseño textil en vectores · Andahuaylas</small></div>
+  <div class="topactions">
+    <span class="session-label">👤 <span id="usuarioActivo"></span></span>
+    <button id="cerrarSesion" title="Cerrar sesión">Salir</button>
+    <button id="nuevo">Nuevo</button>
+    <button id="guardar">Guardar</button>
+    <button id="descargar">Descargar editable</button>
+    <button id="abrir">Abrir archivo</button>
+    <button id="exportar">SVG</button>
+    <button id="exportarPng">PNG</button>
+    <button id="imprimir" class="primary">Imprimir</button>
+  </div>
+</header>
+
+<main>
+  <!-- ========== IZQUIERDA: prenda y plantillas ========== -->
+  <aside class="left">
+    <h2>Prenda</h2>
+    <div id="prendas" class="garments"></div>
+    <label>Color de la prenda<input type="color" id="base" value="#805238"></label>
+
+    <div class="solo-disenar">
+      <hr>
+      <h2>Plantillas</h2>
+      <p class="muted">Un clic arma una composición lista para editar.</p>
+      <div id="plantillas" class="plantillas"></div>
+
+      <hr>
+      <details>
+        <summary>Cambiar la forma</summary>
+        <p class="muted">Activa «Editar contorno» y arrastra los puntos turquesa.</p>
+        <label class="inline"><input type="checkbox" id="editarContorno"> Editar contorno</label>
+        <div class="fila">
+          <button id="masPunto" title="Agrega un punto después del punto elegido">+ Punto</button>
+          <button id="menosPunto">− Punto</button>
+          <button id="restaurar">Restaurar</button>
+        </div>
+      </details>
+      <details>
+        <summary>Calcar desde una foto</summary>
+        <p class="muted">Dibuja el contorno sobre la foto de una prenda. Usa fotos con permiso de uso.</p>
+        <button id="foto">Cargar foto</button>
+        <img id="fotoVista" alt="Foto cargada por el usuario" hidden>
+        <button id="quitarFoto" hidden>Quitar foto</button>
+        <input type="file" id="fotoArchivo" accept="image/png,image/jpeg,image/webp" hidden>
+      </details>
+    </div>
+
+    <hr>
+    <h2>Diseños guardados</h2>
+    <div id="guardados"></div>
+    <p class="muted">Se guardan en este navegador. Descarga el editable para llevarlos a otra computadora.</p>
+  </aside>
+
+  <!-- ========== CENTRO: pestañas y lienzo ========== -->
+  <section class="workspace">
+    <div class="worktop">
+      <input id="nombre" maxlength="70" value="Mi diseño textil" aria-label="Nombre del diseño">
+      <div><button id="deshacer" title="Ctrl+Z">↶ Deshacer</button><button id="rehacer" title="Ctrl+Y">↷ Rehacer</button></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-modo="disenar" role="tab" aria-selected="true">✎ Diseñar</button>
+      <button class="tab" data-modo="pintar" role="tab" aria-selected="false">🖌 Pintar</button>
+    </div>
+    <div class="toolbar solo-disenar">
+      <button id="agregar" class="primary">+ Añadir curva</button>
+      <button id="duplicar" title="Ctrl+D">Duplicar</button>
+      <button id="eliminar" title="Supr">Eliminar</button>
+      <button id="alFrente" title="Subir de capa">▲ Al frente</button>
+      <button id="atras" title="Bajar de capa">▼ Atrás</button>
+      <label class="inline"><input type="checkbox" id="puntos"> Editar puntos</label>
+      <button id="ayuda">Cómo usar</button>
+    </div>
+    <div class="hands-bar solo-disenar">
+      <button id="botonCamara" type="button">📷 Activar cámara y mano</button>
+      <span>Permite la webcam en el navegador; apunta con el índice y <strong>junta índice y pulgar</strong> para arrastrar. Puedes activar la cámara incluso sin curvas. <a href="probar_camara.html" target="_blank" rel="noopener">¿No abre? Probar solo webcam</a></span>
+      <div id="panelCamara" class="camera-panel" hidden>
+        <video id="videoMano" autoplay muted playsinline aria-label="Vista de la cámara, efecto espejo"></video>
+        <div class="camera-copy" id="mensajeCamara" role="status" aria-live="polite">Cámara desactivada.</div>
+      </div>
+    </div>
+    <div class="zoom-bar">
+      <button id="zoomMenos" aria-label="Alejar">🔍 −</button>
+      <output id="zoomValor">100%</output>
+      <button id="zoomMas" aria-label="Acercar">🔍 +</button>
+      <button id="zoomEncajar">Encajar</button>
+      <label class="inline"><input type="checkbox" id="cuadricula"> Cuadrícula y eje</label>
+    </div>
+
+    <div id="canvasWrap">
+      <span id="cursorMano" hidden aria-hidden="true"></span>
+      <svg id="lienzo" viewBox="0 0 800 800" role="img" aria-label="Área de diseño textil editable"></svg>
+    </div>
+    <div class="foot"><span id="estado" role="status" aria-live="polite">Listo para diseñar.</span><span id="metricas"></span></div>
+  </section>
+
+  <!-- ========== DERECHA: según la pestaña ========== -->
+  <aside class="right">
+    <div class="solo-disenar">
+      <h2>Motivos</h2>
+      <p class="muted">Arrástralos a la prenda o púlsalos.</p>
+      <div id="galeria" class="motif-gallery"></div>
+      <hr>
+      <h2>Ajustes del motivo</h2>
+      <label>Tipo de curva
+        <select id="tipo">
+          <option value="bezier">Bézier (De Casteljau)</option>
+          <option value="hermite">Hermite (tangentes)</option>
+          <option value="bspline">B-spline (De Boor)</option>
+        </select>
+      </label>
+      <p id="infoCurva" class="muted"></p>
+      <div id="paleta" class="palette" aria-label="Paleta de colores textiles"></div>
+      <label>Color del motivo<input type="color" id="color" value="#f3ce7e"></label>
+      <label>Grosor <output id="salidaGrosor"></output><input type="range" id="grosor" min="1" max="16" value="4"></label>
+      <label>Tamaño <output id="salidaTamano"></output><input type="range" id="tamano" min="15" max="400" value="100"></label>
+      <label>Giro <output id="salidaGiro"></output><input type="range" id="giro" min="-180" max="180" value="0"></label>
+      <label class="inline"><input type="checkbox" id="espejo"> Espejo (copia simétrica)</label>
+      <label class="inline"><input type="checkbox" id="cerrado"> Cerrar y rellenar</label>
+      <label>Acabado de la prenda
+        <select id="vista"><option value="textura">Con textura</option><option value="boceto">Boceto simple</option></select>
+      </label>
+      <details open>
+        <summary>Repeticiones</summary>
+        <label>Horizontales<input type="number" id="repX" min="1" max="10" value="1"></label>
+        <label>Verticales<input type="number" id="repY" min="1" max="10" value="1"></label>
+        <label>Separación horizontal<input type="number" id="sepX" min="20" max="600" value="110"></label>
+        <label>Separación vertical<input type="number" id="sepY" min="20" max="600" value="90"></label>
+      </details>
+      <hr>
+      <h2>Elementos</h2>
+      <div id="elementos"></div>
+      <div class="notice">Motivos de demostración con curvas Bézier, Hermite y B-spline programadas desde cero.</div>
+    </div>
+
+    <div class="solo-pintar">
+      <h2>Pintura</h2>
+      <p class="muted">Pinta sobre la prenda con el ratón o el dedo. Solo se ve dentro de la prenda.</p>
+      <div class="fila">
+        <button id="hPincel" class="active">🖌 Pincel</button>
+        <button id="hBorrador">⌫ Borrador</button>
+      </div>
+      <div id="paletaPintura" class="palette"></div>
+      <label>Color<input type="color" id="pColor" value="#8d3439"></label>
+      <label>Grosor <output id="salidaPG"></output><input type="range" id="pGrosor" min="1" max="40" value="8"></label>
+      <label>Opacidad <output id="salidaPO"></output><input type="range" id="pOpacidad" min="0.2" max="1" step="0.1" value="1"></label>
+      <button id="limpiarPintura">Borrar toda la pintura</button>
+      <p class="muted">Con el borrador, pulsa o pasa sobre un trazo para quitarlo. Ctrl+Z deshace.</p>
+    </div>
+  </aside>
+</main>
+
+<input type="file" id="archivo" accept=".json,application/json" hidden>
+
+<dialog id="dialogoAyuda">
+  <h2>De una idea a tu propuesta textil</h2>
+  <ol>
+    <li>Elige una prenda a la izquierda (poncho, chompa, pantalón, vestido…).</li>
+    <li>Si tu prenda no está, usa «Editar contorno» o carga una foto para calcarla.</li>
+    <li>Arrastra un motivo del panel derecho a la prenda.</li>
+    <li>Muévelo, cámbiale el tamaño con la esquina, el giro y el color. Activa «Espejo» para hacerlo simétrico.</li>
+    <li>Prueba una <b>plantilla</b> a la izquierda, o usa «Repeticiones» para armar franjas.</li>
+    <li>En la pestaña <b>Pintar</b> dibujas a mano alzada sobre la prenda.</li>
+    <li>Activa <b>Cámara y mano</b> para mover puntos: muestra una curva, apunta con el índice, junta los dedos para tomar un punto y sepáralos para soltarlo. También funciona con los puntos del contorno.</li>
+    <li>Guarda, descarga el editable, exporta SVG o imprime.</li>
+  </ol>
+  <p>Ctrl+Z / Ctrl+Y: deshacer / rehacer · Ctrl+D: duplicar · Supr: eliminar · Flechas: mover el motivo (Mayús = más rápido). Las prendas son esquemas 2D, no patrones de corte. Las curvas usan De Casteljau (Bézier), bases de Hermite y De Boor (B-spline).</p>
+  <button id="cerrarAyuda" class="primary">Entendido</button>
+</dialog>
+
+<!-- El orden importa: primero las matemáticas, al final la interfaz -->
+<script src="src/curvas/bezier.js"></script>
+<script src="src/curvas/hermite.js"></script>
+<script src="src/curvas/bspline.js"></script>
+<script src="src/geometria/matrices.js"></script>
+<script src="src/geometria/trazo.js"></script>
+<script src="src/render/prendas.js"></script>
+<script src="src/render/escena.js"></script>
+<script src="src/editor/motivos.js"></script>
+<script src="src/editor/plantillas.js"></script>
+<script src="src/editor/archivo.js"></script>
+<script src="src/editor/editor.js"></script>
+<script src="src/ui/panel.js"></script>
+<script src="src/gestos.js"></script>
+<script src="src/manos.js"></script>
+<script src="src/auth.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
